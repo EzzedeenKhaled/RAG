@@ -1,36 +1,196 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Second Brain AI 🧠
 
-## Getting Started
+Second Brain AI is a simple **PDF chat application** that allows you to upload a PDF and ask questions about its contents.
+The system extracts text from the document, stores embeddings in a vector database, and uses an LLM to answer questions based on the document context.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Features
+
+- Upload PDFs and process their content
+- Ask questions about the uploaded document
+- Retrieval-Augmented Generation (RAG)
+- Local vector database using **ChromaDB**
+- Embeddings and LLM responses powered by **OpenRouter**
+- Chat-style UI built with **Next.js + React**
+
+---
+
+# Tech Stack
+
+Frontend:
+
+- Next.js
+- React
+- TailwindCSS
+
+Backend:
+
+- FastAPI
+- ChromaDB
+- PyPDF
+- LangChain Text Splitter
+- OpenRouter API (LLM + embeddings)
+
+AI Models:
+
+- `google/gemma-3-12b-it:free` (LLM)
+- `sentence-transformers/all-minilm-l6-v2` (embeddings)
+
+---
+
+# 1. Get an OpenRouter API Key
+
+1. Go to
+   https://openrouter.ai
+
+2. Create an account.
+
+3. Open the API Keys page:
+   https://openrouter.ai/keys
+
+4. Create a new key.
+
+5. Copy the key.
+
+---
+
+# 2. Backend Setup (FastAPI)
+
+### Install Python dependencies
+
+Recommended Python version: **3.10+**
+
+```
+pip install fastapi uvicorn python-dotenv pypdf chromadb langchain-text-splitters openai
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Create `.env`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+In the backend folder create:
 
-## Learn More
+```
+.env
+```
 
-To learn more about Next.js, take a look at the following resources:
+Add your OpenRouter API key:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+### Start the backend
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+python main.py
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+or
+
+```
+uvicorn main:app --reload --port 8002
+```
+
+Backend will run at:
+
+```
+http://localhost:8002
+```
+
+---
+
+# 3. Frontend Setup (Next.js)
+
+Install dependencies:
+
+```
+npm install
+```
+
+Run the development server:
+
+```
+npm run dev
+```
+
+Frontend will run at:
+
+```
+http://localhost:3000
+```
+
+---
+
+# 4. How the System Works
+
+1. User uploads a PDF.
+2. Backend extracts text from the document.
+3. Text is split into chunks.
+4. Each chunk is converted into an embedding.
+5. Embeddings are stored in **ChromaDB**.
+6. When a question is asked:
+   - The question is embedded
+   - Similar chunks are retrieved
+   - Context is sent to the LLM
+
+7. The AI generates an answer using the retrieved context.
+
+This approach is called **Retrieval-Augmented Generation (RAG)**.
+
+---
+
+# Example Workflow
+
+1. Upload a research paper PDF
+2. Ask:
+
+```
+What problem does the paper solve?
+```
+
+3. The AI searches the document and answers based only on the PDF content.
+
+---
+
+# API Endpoints
+
+### Upload PDF
+
+```
+POST /upload
+```
+
+Form Data:
+
+```
+file: pdf
+```
+
+---
+
+# Notes
+
+- The vector database runs **locally in memory**.
+- Restarting the backend clears stored documents.
+- The free OpenRouter models may have **rate limits**.
+
+---
+
+# Future Improvements
+
+- Persistent vector database
+- Multiple document support
+- Streaming responses
+- Better chat UI
+- Authentication
+- Deployment (Docker + Cloud)
+
+---
+
+# License
+
+MIT
