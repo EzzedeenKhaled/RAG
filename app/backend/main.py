@@ -28,8 +28,11 @@ app.add_middleware(
 )
 
 # Local Vector DB
-chroma_client = chromadb.Client()
-collection = chroma_client.get_or_create_collection("pdf_docs")
+chroma_client = chromadb.HttpClient(
+    host=os.getenv("CHROMA_HOST", "chromadb"),
+    port=int(os.getenv("CHROMA_PORT", 8000))
+)
+collection = chroma_client.get_or_create_collection(name="pdf_docs")
 
 class Question(BaseModel):
     question: str

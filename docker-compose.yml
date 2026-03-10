@@ -1,0 +1,27 @@
+services:
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./chroma_data:/data
+
+  backend:
+    build: ./app/backend
+    ports:
+      - "8002:8002"
+    environment:
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+    depends_on:
+      - chromadb
+
+  frontend:
+    build: ./ # root folder contains package.json + Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8002
+    depends_on:
+      - backend

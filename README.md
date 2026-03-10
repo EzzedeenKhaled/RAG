@@ -1,196 +1,182 @@
 # Second Brain AI 🧠
 
-Second Brain AI is a simple **PDF chat application** that allows you to upload a PDF and ask questions about its contents.
-The system extracts text from the document, stores embeddings in a vector database, and uses an LLM to answer questions based on the document context.
+A **PDF chat application** that lets you upload a PDF and ask questions about its contents using Retrieval-Augmented Generation (RAG).
 
 ---
 
-# Features
+## Features
 
 - Upload PDFs and process their content
 - Ask questions about the uploaded document
-- Retrieval-Augmented Generation (RAG)
 - Local vector database using **ChromaDB**
 - Embeddings and LLM responses powered by **OpenRouter**
 - Chat-style UI built with **Next.js + React**
+- Fully containerized with **Docker Compose**
 
 ---
 
-# Tech Stack
+## Tech Stack
 
-Frontend:
+**Frontend:** Next.js, React, TailwindCSS v4
 
-- Next.js
-- React
-- TailwindCSS
+**Backend:** FastAPI, ChromaDB, PyPDF, LangChain Text Splitter, OpenRouter API
 
-Backend:
+**AI Models:**
 
-- FastAPI
-- ChromaDB
-- PyPDF
-- LangChain Text Splitter
-- OpenRouter API (LLM + embeddings)
-
-AI Models:
-
-- `google/gemma-3-12b-it:free` (LLM)
-- `sentence-transformers/all-minilm-l6-v2` (embeddings)
+- `google/gemma-3-12b-it:free` — LLM
+- `sentence-transformers/all-minilm-l6-v2` — Embeddings
 
 ---
 
-# 1. Get an OpenRouter API Key
+## Environment Setup
 
-1. Go to
-   https://openrouter.ai
-
-2. Create an account.
-
-3. Open the API Keys page:
-   https://openrouter.ai/keys
-
-4. Create a new key.
-
-5. Copy the key.
-
----
-
-# 2. Backend Setup (FastAPI)
-
-### Install Python dependencies
-
-Recommended Python version: **3.10+**
-
-```
-pip install fastapi uvicorn python-dotenv pypdf chromadb langchain-text-splitters openai
-```
-
----
-
-### Create `.env`
-
-In the backend folder create:
-
-```
-.env
-```
-
-Add your OpenRouter API key:
+Create a single `.env` file in the **project root** (next to `docker-compose.yml`):
 
 ```
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 ```
 
----
+> Get your key at https://openrouter.ai/keys
 
-### Start the backend
-
-```
-python main.py
-```
-
-or
-
-```
-uvicorn main:app --reload --port 8002
-```
-
-Backend will run at:
-
-```
-http://localhost:8002
-```
+This file is shared by both Docker Compose and the local setup. Do not create separate `.env` files in subfolders.
 
 ---
 
-# 3. Frontend Setup (Next.js)
+## Running with Docker (Recommended)
 
-Install dependencies:
+### Project Structure
 
 ```
+my-rag/
+├── app/
+│   └── backend/
+│       ├── main.py
+│       ├── requirements.txt
+│       └── Dockerfile
+├── docker-compose.yml
+├── Dockerfile
+├── .env                  ← your API key
+└── next.config.ts
+```
+
+### Start all services
+
+```bash
+docker compose up --build
+```
+
+On subsequent runs (no code changes):
+
+```bash
+docker compose up
+```
+
+Stop all services:
+
+```bash
+docker compose down
+```
+
+The app will be available at `http://localhost:3000`.
+
+---
+
+## Running Locally (Without Docker)
+
+### 1. Start ChromaDB
+
+```bash
+pip install chromadb
+chromadb run --host 0.0.0.0 --port 8000
+```
+
+> **Note:** The default `CHROMA_HOST` is `chromadb` (the Docker service name). Change it to `localhost` when running outside Docker.
+
+### 3. Start the backend
+
+From `app/backend/`:
+
+```bash
+pip install -r requirements.txt
+python '.\main.py'
+```
+
+Backend runs at `http://localhost:8002`.
+
+### 4. Start the frontend
+
+From the project root:
+
+```bash
 npm install
-```
-
-Run the development server:
-
-```
 npm run dev
 ```
 
-Frontend will run at:
+Frontend runs at `http://localhost:3000`.
 
+---
+
+## How It Works
+
+1. User uploads a PDF via the frontend
+2. Backend extracts text using PyPDF
+3. Text is split into overlapping chunks (800 chars, 100 overlap)
+4. Chunks are embedded via OpenRouter and stored in ChromaDB
+5. When a question is asked, it is embedded using the same model
+6. Top 3 similar chunks are retrieved from ChromaDB
+7. Context + question are sent to Gemma 3 12B via OpenRouter
+8. The AI returns an answer grounded in the PDF content
+
+---
+
+## API Endpoints
+
+### `POST /upload`
+
+Uploads and processes a PDF.
+
+Form data: `file` (PDF)
+
+Response:
+
+```json
+{ "status": "success", "chunks_processed": 42 }
 ```
-http://localhost:3000
+
+### `POST /ask`
+
+Asks a question about the uploaded document.
+
+Body:
+
+```json
+{ "question": "What problem does the paper solve?" }
+```
+
+Response:
+
+```json
+{ "answer": "..." }
 ```
 
 ---
 
-# 4. How the System Works
+## Notes
 
-1. User uploads a PDF.
-2. Backend extracts text from the document.
-3. Text is split into chunks.
-4. Each chunk is converted into an embedding.
-5. Embeddings are stored in **ChromaDB**.
-6. When a question is asked:
-   - The question is embedded
-   - Similar chunks are retrieved
-   - Context is sent to the LLM
-
-7. The AI generates an answer using the retrieved context.
-
-This approach is called **Retrieval-Augmented Generation (RAG)**.
+- Free OpenRouter models may have rate limits
+- Only one document is supported at a time in the current implementation
 
 ---
 
-# Example Workflow
+## Future Improvements
 
-1. Upload a research paper PDF
-2. Ask:
-
-```
-What problem does the paper solve?
-```
-
-3. The AI searches the document and answers based only on the PDF content.
-
----
-
-# API Endpoints
-
-### Upload PDF
-
-```
-POST /upload
-```
-
-Form Data:
-
-```
-file: pdf
-```
-
----
-
-# Notes
-
-- The vector database runs **locally in memory**.
-- Restarting the backend clears stored documents.
-- The free OpenRouter models may have **rate limits**.
-
----
-
-# Future Improvements
-
-- Persistent vector database
 - Multiple document support
 - Streaming responses
-- Better chat UI
 - Authentication
-- Deployment (Docker + Cloud)
+- Cloud deployment
 
 ---
 
-# License
+## License
 
 MIT
