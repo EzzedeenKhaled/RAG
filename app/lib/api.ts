@@ -18,20 +18,19 @@ export async function uploadAndProcessPDF(file: File) {
   }
 }
 
-export async function askQuestion(question: string) {
+export async function askQuestion(question: string, webSearch: boolean) {
   try {
     const response = await fetch("http://localhost:8002/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, web_search: webSearch }),
     });
 
     if (!response.ok) {
       throw new Error("Failed to ask question");
     }
 
-    const data = await response.json();
-    return data.answer;
+    return response.body;
   } catch (error) {
     console.error("Error asking question:", error);
     throw error;

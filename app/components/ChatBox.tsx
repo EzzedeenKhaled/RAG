@@ -11,6 +11,7 @@ type Message = {
 export default function ChatBox() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [webSearchActive, setWebSearchActive] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "ai",
@@ -30,20 +31,38 @@ export default function ChatBox() {
     setInputText("");
     setLoading(true);
 
+    let aiText = "";
     try {
-      const answer = await askQuestion(inputText);
+      const stream = await askQuestion(inputText, webSearchActive);
 
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1] = { role: "ai", content: answer };
-        return updated;
-      });
+      if (!stream) throw new Error("No stream");
+
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        if (chunk) aiText += chunk;
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "ai",
+            content: aiText,
+          };
+          return updated;
+        });
+        await new Promise((resolve) => setTimeout(resolve, 50)); // Throttle UI updates
+      }
     } catch (error) {
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           role: "ai",
-          content: "Sorry, there was an error getting the answer.",
+          content: aiText || "Sorry, something went wrong.",
         };
         return updated;
       });
@@ -51,7 +70,9 @@ export default function ChatBox() {
       setLoading(false);
     }
   };
-
+  const handleWebSearch = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setWebSearchActive((prev) => !prev);
+  };
   const handleButtonClick = () => {
     fileInputRef.current?.click();
   };
@@ -108,8 +129,10 @@ export default function ChatBox() {
     }
   };
   return (
-    <div className="bg-gray-200 h-screen">
-      <MessageList messages={messages} loading={loading} />
+    <div className="bg-gray-200 min-h-screen">
+      <div className="max-w-7xl mx-auto pt-6">
+        <MessageList messages={messages} loading={loading} />
+      </div>
       <footer className="fixed bottom-0 bg-white p-3 border-t border-gray-300 max-w-2xl rounded-lg mx-auto left-0 right-0 mb-10">
         <div className="flex items-center">
           <input
@@ -124,6 +147,16 @@ export default function ChatBox() {
             className="text-gray-500 hover:text-gray-700 cursor-pointer mt-2"
           >
             <span className="material-symbols-outlined">attach_file</span>
+          </button>
+          <button
+            onClick={handleWebSearch}
+            className={`cursor-pointer mt-2 ml-2 ${
+              webSearchActive
+                ? "text-blue-500"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <span className="material-symbols-outlined">travel_explore</span>
           </button>
           <input
             type="text"

@@ -87,7 +87,7 @@ The app will be available at `http://localhost:3000`.
 
 ```bash
 pip install chromadb
-chromadb run --host 0.0.0.0 --port 8000
+chroma run --host 0.0.0.0 --port 8000
 ```
 
 > **Note:** The default `CHROMA_HOST` is `chromadb` (the Docker service name). Change it to `localhost` when running outside Docker.
@@ -124,8 +124,18 @@ Frontend runs at `http://localhost:3000`.
 4. Chunks are embedded via OpenRouter and stored in ChromaDB
 5. When a question is asked, it is embedded using the same model
 6. Top 3 similar chunks are retrieved from ChromaDB
-7. Context + question are sent to Gemma 3 12B via OpenRouter
-8. The AI returns an answer grounded in the PDF content
+7. Context, question, and real-time web search results are sent to Gemma 3 12B via OpenRouter.
+8. The AI streams the response back to the UI, providing grounded, up-to-date answers.
+
+---
+
+---
+
+## Updated Features
+
+Real-time streaming: Watch the AI construct answers word-by-word for a more responsive feel.
+
+Integrated Web Search: Automatically fetches live data to supplement PDF context when needed.
 
 ---
 
@@ -171,7 +181,6 @@ Response:
 ## Future Improvements
 
 - Multiple document support
-- Streaming responses
 - Authentication
 - Cloud deployment
 
