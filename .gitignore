@@ -42,3 +42,8 @@ next-env.d.ts
 
 app/backend/chroma/
 chroma_data/
+
+
+.git
+.env
+pnpm-debug.log*

@@ -1,8 +1,9 @@
-fastapi 
-uvicorn 
-pypdf 
-langchain-text-splitters 
-chromadb
+fastapi
+uvicorn-hmr
+pypdf
+langchain-text-splitters
 openai
 python-multipart
-python-dotenv 
+python-dotenv
+qdrant-client
+tavily-python

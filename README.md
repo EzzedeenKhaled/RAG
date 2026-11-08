@@ -8,7 +8,7 @@ A **PDF chat application** that lets you upload a PDF and ask questions about it
 
 - Upload PDFs and process their content
 - Ask questions about the uploaded document
-- Local vector database using **ChromaDB**
+- Vector storage using **Qdrant Cloud**
 - Embeddings and LLM responses powered by **OpenRouter**
 - Chat-style UI built with **Next.js + React**
 - Fully containerized with **Docker Compose**
@@ -19,12 +19,14 @@ A **PDF chat application** that lets you upload a PDF and ask questions about it
 
 **Frontend:** Next.js, React, TailwindCSS v4
 
-**Backend:** FastAPI, ChromaDB, PyPDF, LangChain Text Splitter, OpenRouter API
+**Backend:** FastAPI, Qdrant Cloud, PyPDF, LangChain Text Splitter, OpenRouter API
 
 **AI Models:**
 
-- `google/gemma-3-12b-it:free` — LLM
+- `openrouter/free` — LLM (e.g. `qwen/qwen3-coder:free`, `z-ai/glm-4.5-air:free`, `inclusionai/ring-2.6-1t:free`)
 - `sentence-transformers/all-minilm-l6-v2` — Embeddings
+
+**Package Manager:** pnpm
 
 ---
 
@@ -34,9 +36,13 @@ Create a single `.env` file in the **project root** (next to `docker-compose.yml
 
 ```
 OPENROUTER_API_KEY=your_openrouter_api_key_here
+QDRANT_URL=your_qdrant_cluster_url_here
+QDRANT_API_KEY=your_qdrant_api_key_here
 ```
 
-> Get your key at https://openrouter.ai/keys
+> Get your OpenRouter key at https://openrouter.ai/keys
+>
+> Get your Qdrant credentials from your cluster dashboard at https://cloud.qdrant.io
 
 This file is shared by both Docker Compose and the local setup. Do not create separate `.env` files in subfolders.
 
@@ -50,12 +56,12 @@ This file is shared by both Docker Compose and the local setup. Do not create se
 my-rag/
 ├── app/
 │   └── backend/
-│       ├── main.py
-│       ├── requirements.txt
-│       └── Dockerfile
+│   └── chats/
+│   └── components/
+│   └── lib/
 ├── docker-compose.yml
 ├── Dockerfile
-├── .env                  ← your API key
+├── .env                  ← your API keys
 └── next.config.ts
 ```
 
@@ -83,33 +89,26 @@ The app will be available at `http://localhost:3000`.
 
 ## Running Locally (Without Docker)
 
-### 1. Start ChromaDB
+No local vector database is required — the backend connects directly to your **Qdrant Cloud** cluster using the `QDRANT_URL` and `QDRANT_API_KEY` from your `.env`.
 
-```bash
-pip install chromadb
-chroma run --host 0.0.0.0 --port 8000
-```
-
-> **Note:** The default `CHROMA_HOST` is `chromadb` (the Docker service name). Change it to `localhost` when running outside Docker.
-
-### 3. Start the backend
+### 1. Start the backend
 
 From `app/backend/`:
 
 ```bash
 pip install -r requirements.txt
-python '.\main.py'
+uvicorn main:app --host 0.0.0.0 --port 8002 --reload
 ```
 
-Backend runs at `http://localhost:8002`.
+Backend runs at `http://localhost:8002` with hot reload enabled.
 
-### 4. Start the frontend
+### 2. Start the frontend
 
 From the project root:
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Frontend runs at `http://localhost:3000`.
@@ -121,13 +120,11 @@ Frontend runs at `http://localhost:3000`.
 1. User uploads a PDF via the frontend
 2. Backend extracts text using PyPDF
 3. Text is split into overlapping chunks (800 chars, 100 overlap)
-4. Chunks are embedded via OpenRouter and stored in ChromaDB
+4. Chunks are embedded via OpenRouter and stored in **Qdrant Cloud**
 5. When a question is asked, it is embedded using the same model
-6. Top 3 similar chunks are retrieved from ChromaDB
-7. Context, question, and real-time web search results are sent to Gemma 3 12B via OpenRouter.
-8. The AI streams the response back to the UI, providing grounded, up-to-date answers.
-
----
+6. Top 3 similar chunks are retrieved from your Qdrant collection
+7. Context, question, and real-time web search results are sent to `openrouter/free` via OpenRouter
+8. The AI streams the response back to the UI, providing grounded, up-to-date answers
 
 ---
 
@@ -175,6 +172,7 @@ Response:
 
 - Free OpenRouter models may have rate limits
 - Only one document is supported at a time in the current implementation
+- Vectors are stored remotely in Qdrant Cloud and persist across restarts and deployments
 
 ---
 

@@ -1,19 +1,27 @@
-"use client"; // Required for localStorage and state
+"use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+
+const KEY = "hasSeenWelcomePopup";
+
+const subscribe = () => () => {};
+const getSnapshot = () => !localStorage.getItem(KEY);
+const getServerSnapshot = () => false;
 
 export default function WelcomePopup() {
-  const [isOpen, setIsOpen] = useState(false);
+  const shouldShow = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
+  const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
-    const hasSeenPopup = localStorage.getItem("hasSeenWelcomePopup");
-    if (!hasSeenPopup) {
-      setIsOpen(true);
-      localStorage.setItem("hasSeenWelcomePopup", "true");
-    }
-  }, []);
+  const handleClose = () => {
+    localStorage.setItem(KEY, "true");
+    setDismissed(true);
+  };
 
-  if (!isOpen) return null;
+  if (!shouldShow || dismissed) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -26,15 +34,16 @@ export default function WelcomePopup() {
         </div>
 
         <p className="dark:text-zinc-700 leading-relaxed">
-          Upload your PDFs and chat with them instantly. Our AI "Second Brain"
-          helps you find answers in seconds. No more endless scrolling!
+          Upload your PDFs and chat with them instantly. Our AI &quot;Second
+          Brain&quot; helps you find answers in seconds. No more endless
+          scrolling!
         </p>
 
         <button
-          onClick={() => setIsOpen(false)}
+          onClick={handleClose}
           className="mt-6 w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 transition-colors cursor-pointer"
         >
-          Let's Get Started
+          Let&apos;s Get Started
         </button>
       </div>
     </div>
