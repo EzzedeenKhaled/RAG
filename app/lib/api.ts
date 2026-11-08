@@ -1,6 +1,6 @@
 import { Message, UploadResponse } from "./types";
 
-const API_URL = "http://localhost:8002";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function uploadAndProcessPDF(
   file: File,
