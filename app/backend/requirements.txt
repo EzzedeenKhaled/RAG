@@ -1,5 +1,5 @@
 fastapi
-uvicorn-hmr
+uvicorn
 pypdf
 langchain-text-splitters
 openai
@@ -7,3 +7,4 @@ python-multipart
 python-dotenv
 qdrant-client
 tavily-python
+supabase
